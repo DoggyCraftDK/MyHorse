@@ -1,0 +1,125 @@
+name: MyHorse
+main: com.dogonfire.myhorse.MyHorse
+author: DogOnFire
+version: 0.4.0
+api-version: 1.16
+description: Horse Control for Minecraft!
+website: http://dev.bukkit.org/server-mods/myhorse
+softdepend: [Vault]
+commands:
+  myhorse:
+    description: Controls the MyHorse system
+    usage: /myhorse
+  mh:
+    description: Controls the MyHorse system
+    usage: /mh
+permissions:
+    myhorse.*:
+        description: Gives access to all default MyHorse commands
+        default: false
+        children:
+            myhorse.help: true
+            myhorse.info: true
+            myhorse.kill: true
+            myhorse.setchest: true
+            myhorse.list: true
+            myhorse.setowner: true
+            myhorse.goto: true
+            myhorse.comehere: true
+            myhorse.goaway: true
+            myhorse.buy: true
+            myhorse.sell: true
+            myhorse.claim: true
+            myhorse.select: true
+            myhorse.name: true
+            myhorse.lock: true
+            myhorse.unlock: true
+            myhorse.addfriend: true
+            myhorse.removefriend: true
+            myhorse.chest: true
+            myhorse.removechest: true
+    myhorse.updates:
+        description: Player will see update notifications
+        default: false        
+    myhorse.setchest:
+        description: Allows a player to set a chest on his horse
+        default: true              
+    myhorse.info:
+        description: Allows a player to see info about his horse
+        default: true
+    myhorse.admin:
+        description: Allows a player to operate on a horse owned by any player
+        default: false
+    myhorse.reload:
+        description: Allows a player to reload myhorse config
+        default: false
+    myhorse.claim:
+        description: Allows a player to claim un-owned horses
+        default: true
+    myhorse.select:
+        description: Allows a player to select his owned horse
+        default: true
+    myhorse.bypass.chest:
+        description: Allows a player to access inventory of any horse
+        default: false
+    myhorse.bypass.leash:
+        description: Allows a player to leash any horse
+        default: false
+    myhorse.bypass.mount:
+        description: Allows a player to mount any horse
+        default: false
+    myhorse.goto:
+        description: Allows a player to goto his horse
+        default: true
+    myhorse.list:
+        description: Allows a player see a list of all his horses
+        default: true
+    myhorse.kill:
+        description: Allows a player to kill his selected horse
+        default: true
+    myhorse.setowner:
+        description: Allows a player to set a new owner for his horse
+        default: true
+    myhorse.goaway:
+        description: Allows a player to set his horse free
+        default: true
+    myhorse.comehere:
+        description: Allows player to teleport his horse to him
+        default: true
+    myhorse.addfriend:
+        description: Allows player to add a friend to his horse
+        default: true
+    myhorse.removefriend:
+        description: Allows player to remove a friend from his horse
+        default: true
+    myhorse.lock:
+        description: Allows player to lock his horse
+        default: true
+    myhorse.unlock:
+        description: Allows player to unlock his horse
+        default: true
+    myhorse.delete:
+        description: Allows player to delete horse
+        default: true
+    myhorse.spawn:
+        description: Allows player to spawn a horse
+        default: false
+    myhorse.buy:
+        description: Allows player to buy a horse
+        default: true
+    myhorse.sell:
+        description: Allows player to set his horse for sale
+        default: true
+    myhorse.name:
+        description: Allows player to name a horse
+        default: true
+    myhorse.help:
+        description: Allows player to see the help page
+        default: true
+    myhorse.chest:
+        description: Allows player to see the horse's inventory if it is carrying a chest
+        default: true
+    myhorse.removechest:
+        description: Allows player to remove the chest from the horse
+        default: true
+         

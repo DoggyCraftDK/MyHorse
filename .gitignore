@@ -1,2 +1,20 @@
-/bin
+# Libs and stuff
+/bukkit
 /lib
+/jar
+dependency-reduced-pom.xml
+
+# Eclipse Core
+/bin
+
+# Specific to IDEA
+.idea/
+MyHorse.iml
+
+# JDT-specific (Eclipse Java Development Tools)
+.classpath
+.project
+/.settings/
+
+# Maven build
+/target/

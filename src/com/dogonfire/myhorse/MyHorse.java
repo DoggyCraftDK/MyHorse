@@ -1,12 +1,13 @@
 package com.dogonfire.myhorse;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
-import net.milkbowl.vault.economy.Economy;
-
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.World;
 import org.bukkit.command.Command;
@@ -17,118 +18,125 @@ import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitTask;
 
-public class MyHorse extends JavaPlugin
-{
-	private LanguageManager						languageManager			= null;
-	private PermissionsManager					permissionsManager		= null;
-	private StableManager						stableManager			= null;
-	private HorseManager						horseManager			= null;
-	private HorseOwnerManager					ownerManager			= null;
-	private FileConfiguration					config					= null;
-	private Commands							commands				= null;
-	public boolean								debug					= false;
-	public boolean								downloadLanguageFile	= true;
-	public boolean								horseDamageDisabled		= true;
-	public boolean								allowChestsOnAllHorses	= true;
-	public boolean								autoClaim				= true;
-	public boolean								economyEnabled			= false;
-	public boolean								useUpdateNotifications	= true;
-	public boolean								useHorseTeleportation	= false;
-	public boolean								metricsOptOut			= false;
-	private List<UUID>							allowedWorlds			= new ArrayList<UUID>();
-	private List<EntityDamageEvent.DamageCause>	damageProtection		= new ArrayList<DamageCause>();
-	public String								serverName				= "Your Server";
-	public String								language				= "english";
-	private Economy								economy					= null;
-	public int									maxHorsesPrPlayer		= 3;
+import com.dogonfire.myhorse.events.HorseGrownUpEvent;
 
-	public static final String					NMS						= "v1_10_R1";
-	
-	public boolean isCombatibleServer()
-	{
-		try
-		{
+import net.milkbowl.vault.chat.Chat;
+import net.milkbowl.vault.economy.Economy;
+import net.milkbowl.vault.permission.Permission;
+
+public class MyHorse extends JavaPlugin {
+	private static MyHorse plugin;
+	public boolean vaultEnabled = false;
+	public boolean luckPermsEnabled = false;
+	public boolean worldGuardEnabled = false;
+	private LanguageManager languageManager = null;
+	private PermissionsManager permissionsManager = null;
+	private HorseManager horseManager = null;
+	private HorseOwnerManager ownerManager = null;
+	private FileConfiguration config = null;
+	private Commands commands = null;
+	public boolean debug = false;
+	public boolean downloadLanguageFile = true;
+	public boolean horseDamageDisabled = true;
+	public boolean allowChestOnAllHorses = false;
+	public boolean alwaysShowHorseName = true;
+	public boolean autoClaim = true;
+	public boolean economyEnabled = false;
+	public boolean useUpdateNotifications = true;
+	public boolean useHorseTeleportation = false;
+	public boolean metricsOptOut = false;
+	public int amountOfSecondsBeforeAdult = 2400;
+	private List<UUID> allowedWorlds = new ArrayList<UUID>();
+	private List<EntityDamageEvent.DamageCause> damageProtection = new ArrayList<DamageCause>();
+	public String serverName = "Your Server";
+	public String language = "english";
+	private Economy economy = null;
+	private Chat chat = null;
+	private Permission permission = null;
+	public int maxHorsesPrPlayer = 3;
+	public Runnable timer;
+	public BukkitTask task;
+
+	public static final String NMS = "v1_16_R3";
+
+	public boolean isCombatibleServer() {
+		try {
 			Class<?> theClass = Class.forName("net.minecraft.server." + NMS + ".ItemStack");
-		
+
 			return theClass != null;
-		}
-		catch(Exception ex)
-		{
+		} catch (Exception ex) {
 			return false;
-		}		
-	}
-	
-	public Economy getEconomy()
-	{
-		return this.economy;
+		}
 	}
 
-	public HorseManager getHorseManager()
-	{
+	public Economy getEconomy() {
+		return economy;
+	}
+
+	public Permission getPermissions() {
+		return permission;
+	}
+
+	public Chat getChat() {
+		return chat;
+	}
+
+	public HorseManager getHorseManager() {
 		return this.horseManager;
 	}
 
-	public HorseOwnerManager getOwnerManager()
-	{
+	public HorseOwnerManager getOwnerManager() {
 		return this.ownerManager;
 	}
 
-	public StableManager getStableManager()
-	{
-		return this.stableManager;
-	}
-
-	public LanguageManager getLanguageManager()
-	{
+	public LanguageManager getLanguageManager() {
 		return this.languageManager;
 	}
 
-	public PermissionsManager getPermissionsManager()
-	{
+	public PermissionsManager getPermissionsManager() {
 		return this.permissionsManager;
 	}
 
-	public void log(String message)
-	{
+	public void log(String message) {
 		Logger.getLogger("minecraft").info("[" + getDescription().getFullName() + "] " + message);
 	}
 
-	public void logDebug(String message)
-	{
-		if (this.debug)
-		{
+	public void logSevere(String message) {
+		Logger.getLogger("minecraft").severe("[" + getDescription().getFullName() + "] " + message);
+	}
+
+	public void logDebug(String message) {
+		if (this.debug) {
 			Logger.getLogger("minecraft").info("[" + getDescription().getFullName() + "] " + message);
 		}
 	}
 
-	public void sendInfo(Player player, String message)
-	{
+	public void sendInfo(Player player, String message) {
 		player.sendMessage(ChatColor.AQUA + message);
 	}
 
-	public void reloadSettings()
-	{
+	public void reloadSettings() {
 		reloadConfig();
 
 		loadSettings();
 	}
 
-	public void loadSettings()
-	{
+	public void loadSettings() {
 		this.config = getConfig();
 
-		this.allowChestsOnAllHorses = this.config.getBoolean("Settings.AllowChestsOnAllHorses", false);
+		this.allowChestOnAllHorses = this.config.getBoolean("Settings.AllowChestOnAllHorses", false);
 		this.metricsOptOut = this.config.getBoolean("Settings.MetricsOptOut", false);
 		this.useUpdateNotifications = this.config.getBoolean("Settings.DisplayUpdateNotifications", true);
 		this.debug = this.config.getBoolean("Settings.Debug", false);
 		this.downloadLanguageFile = this.config.getBoolean("Settings.DownloadLanguageFile", true);
-
+		this.amountOfSecondsBeforeAdult = this.config.getInt("Settings.HorseTimeBeforeAdultInSeconds", 2400);
 		this.serverName = this.config.getString("Settings.ServerName", "Your Server");
+		this.alwaysShowHorseName = this.config.getBoolean("Settings.alwaysShowHorseName", true);
 
 		List<String> damageList = this.config.getStringList("Settings.DamageProtections");
-		if ((damageList == null) || (damageList.size() == 0))
-		{
+		if ((damageList == null) || (damageList.size() == 0)) {
 			log("No damage protection settings found in config file.");
 			log("Writing default damage protections to config.");
 
@@ -147,6 +155,7 @@ public class MyHorse extends JavaPlugin
 			damageList.add(EntityDamageEvent.DamageCause.ENTITY_EXPLOSION.name());
 			damageList.add(EntityDamageEvent.DamageCause.LIGHTNING.name());
 			damageList.add(EntityDamageEvent.DamageCause.LAVA.name());
+			damageList.add(EntityDamageEvent.DamageCause.SUFFOCATION.name());
 
 			this.config.set("Settings.DamageProtections", damageList);
 
@@ -156,287 +165,304 @@ public class MyHorse extends JavaPlugin
 		this.damageProtection.clear();
 
 		this.useHorseTeleportation = this.config.getBoolean("Settings.HorseTeleportationEnabled", false);
-		for (String damageName : damageList)
-		{
+		for (String damageName : damageList) {
 			this.damageProtection.add(EntityDamageEvent.DamageCause.valueOf(damageName));
 			logDebug(damageName + " can NOT damage owned horses");
 		}
 		List<String> worldNames = this.config.getStringList("Settings.Worlds");
-		if ((worldNames == null) || (worldNames.size() == 0))
-		{
+		if ((worldNames == null) || (worldNames.size() == 0)) {
 			log("No worlds found in config file.");
 			worldNames = new ArrayList<String>();
-			for (World world : getServer().getWorlds())
-			{
+			for (World world : getServer().getWorlds()) {
 				this.allowedWorlds.add(world.getUID());
 				worldNames.add(world.getName());
-				log("Enabed in world '" + world.getName() + "'");
+				log("Enabled in world '" + world.getName() + "'");
 			}
 			this.config.set("Settings.Worlds", worldNames);
 			saveConfig();
-		}
-		else
-		{
-			for (String worldName : worldNames)
-			{
+		} else {
+			for (String worldName : worldNames) {
 				World world = getServer().getWorld(worldName);
-				if (world == null)
-				{
+				if (world == null) {
 					log("Could NOT enable MyHorse in world '" + worldName + "'. No world found with such name.");
-				}
-				else
-				{
+				} else {
 					this.allowedWorlds.add(world.getUID());
 					log("Enabled in '" + worldName + "'");
 				}
 			}
-			if (worldNames.size() == 0)
-			{
+			if (worldNames.size() == 0) {
 				log("WARNING: No worlds are set in config file. MyHorse is DISABLED on this server!");
 			}
 		}
-
-		for (String groupName : getPermissionsManager().getGroups())
-		{
-			if (this.config.getString("Groups." + groupName) == null)
-			{
-				this.config.set("Groups." + groupName + ".HorseNameColor", ChatColor.GOLD.name());
-				this.config.set("Groups." + groupName + ".MaximumHorses", Integer.valueOf(5));
-			}
+		if (permission != null) {
+			checkForNewGroups();
+			checkForDeletedGroups();
 		}
 	}
 
-	public ChatColor getHorseNameColorForPlayer(UUID playerId)
-	{
-		if (playerId == null)
-		{
+	public ChatColor getHorseNameColorForPlayer(UUID playerId) {
+		if (playerId == null) {
 			return ChatColor.GOLD;
 		}
 
 		String groupName;
 
-		try
-		{
+		try {
 			groupName = getPermissionsManager().getGroup(this.getServer().getOfflinePlayer(playerId).getName());
-		}
-		catch (Exception ex)
-		{
-			log("ERROR getting group name for player " + this.getServer().getOfflinePlayer(playerId).getName() + ":" + ex.getMessage());
+		} catch (Exception ex) {
+			log("ERROR getting group name for player " + this.getServer().getOfflinePlayer(playerId).getName() + ":"
+					+ ex.getMessage());
 			return ChatColor.GOLD;
 		}
 
 		ChatColor nameColor;
 
-		try
-		{
+		try {
 			nameColor = ChatColor.valueOf(this.config.getString("Groups." + groupName + ".HorseNameColor"));
-		}
-		catch (Exception ex)
-		{
-			log("Could not get horse name color from player " + this.getServer().getOfflinePlayer(playerId).getName() + "'s group '" + groupName + "' in config.yml!");
+		} catch (Exception ex) {
+			log("Could not get horse name color from player " + this.getServer().getOfflinePlayer(playerId).getName()
+					+ "'s group '" + groupName + "' in config.yml!");
 			nameColor = ChatColor.GOLD;
 		}
 		return nameColor;
 	}
 
-	public int getMaximumHorsesForPlayer(String playerName)
-	{
+	public int getMaximumHorsesForPlayer(String playerName) {
 		return this.config.getInt("Groups." + getPermissionsManager().getGroup(playerName) + ".MaximumHorses");
 	}
 
-	public void saveSettings()
-	{
+	public void saveSettings() {
 		this.config.set("Settings.ServerName", this.serverName);
-		this.config.set("Settings.Debug", Boolean.valueOf(this.debug));
-		this.config.set("Settings.DownloadLanguageFile", Boolean.valueOf(this.downloadLanguageFile));
-		this.config.set("Settings.InvulnerableHorses", Boolean.valueOf(this.horseDamageDisabled));
-		this.config.set("Settings.HorseTeleportationEnabled", Boolean.valueOf(this.useHorseTeleportation));
-		this.config.set("Settings.AllowChestsOnAllHorses", Boolean.valueOf(this.allowChestsOnAllHorses));
-		this.config.set("Settings.DisplayUpdateNotifications", Boolean.valueOf(this.useUpdateNotifications));
-		this.config.set("Settings.MetricsOptOut", Boolean.valueOf(this.metricsOptOut));
+		this.config.set("Settings.Debug", this.debug);
+		this.config.set("Settings.DownloadLanguageFile", this.downloadLanguageFile);
+		this.config.set("Settings.InvulnerableHorses", this.horseDamageDisabled);
+		this.config.set("Settings.HorseTeleportationEnabled", this.useHorseTeleportation);
+		this.config.set("Settings.HorseTimeBeforeAdultInSeconds", this.amountOfSecondsBeforeAdult);
+		this.config.set("Settings.AllowChestOnAllHorses", this.allowChestOnAllHorses);
+		this.config.set("Settings.DisplayUpdateNotifications", this.useUpdateNotifications);
+		this.config.set("Settings.MetricsOptOut", this.metricsOptOut);
+		this.config.set("Settings.alwaysShowHorseName", alwaysShowHorseName);
 
 		saveConfig();
 	}
 
-	public void onEnable()
-	{
-		if(!this.isCombatibleServer())
-		{
+	private boolean setupPermissions() {
+
+		RegisteredServiceProvider<Permission> permissionPlugin = getServer().getServicesManager().getRegistration(Permission.class);
+		if(permissionPlugin == null) return false;
+		permission = permissionPlugin.getProvider();
+		log("Using " + permission.getName() + " for Permissions.");
+		return true;
+	}
+
+	private boolean setupChat() {
+		RegisteredServiceProvider<Chat> chatPlugin = getServer().getServicesManager().getRegistration(Chat.class);
+		if(chatPlugin == null) return false;
+		chat = chatPlugin.getProvider();
+		log("Using " + chatPlugin.getProvider().getName() + " for Chat.");
+		return true;
+	}
+
+	private boolean setupEconomy() {
+		RegisteredServiceProvider<Economy> rsp = getServer().getServicesManager().getRegistration(Economy.class);
+		if (rsp == null) {
+			return false;
+		}
+		economy = rsp.getProvider();
+		log("Using " + rsp.getProvider().getName() + " for Economy.");
+		return true;
+	}
+
+	public void onEnable() {
+		if (!this.isCombatibleServer()) {
 			log("* Your server is not compatible with the MyHorse plugin");
 			log("* This MyHorse plugin is only compatible with a " + NMS + " server");
 			this.setEnabled(false);
 			return;
 		}
-				
-		this.languageManager = new LanguageManager(this);
+
+		plugin = this;
+
+		if (getServer().getPluginManager().getPlugin("Vault") == null) {
+			logSevere("Vault was not found! Disables permissions, chat and economy for this plugin.");
+			vaultEnabled = false;
+		} else {
+			log("Vault found!");
+			vaultEnabled = true;
+		}
+
+		if (!setupPermissions())
+			logSevere("No vault compatible Permissions plugin was found!");
+		if (!setupChat())
+			logSevere("No vault compatible Chat plugin was found!");
+		if (!setupEconomy())
+			logSevere("No vault compatible Economy plugin was found! Disables buy/sell features");
+
 		this.permissionsManager = new PermissionsManager(this);
+		this.languageManager = new LanguageManager(this);
 		this.horseManager = new HorseManager(this);
 		this.ownerManager = new HorseOwnerManager(this);
-		this.stableManager = new StableManager(this);
 		this.commands = new Commands(this);
-
-		this.permissionsManager.load();
 
 		loadSettings();
 		saveSettings();
 
 		this.languageManager.load();
-		this.stableManager.load();
 		this.horseManager.load();
 		this.ownerManager.load();
-		if (getServer().getPluginManager().getPlugin("Vault") != null)
-		{
-			RegisteredServiceProvider<Economy> economyProvider = getServer().getServicesManager().getRegistration(Economy.class);
-			if (economyProvider != null)
-			{
-				this.economy = ((Economy) economyProvider.getProvider());
-				log("Vault found, buying and selling is enabled.");
-			}
-			else
-			{
-				log("Vault not found. Buying and selling disabled.");
-				this.economyEnabled = false;
-			}
-		}
-		else
-		{
-			log("Vault not found. Buying and selling disabled.");
-			this.economyEnabled = false;
-		}
+		this.permissionsManager.load();
+
 		getServer().getPluginManager().registerEvents(new EventListener(this), this);
 
-		Runnable horseManagerSavetask = new Runnable()
-		{
-			public void run()
-			{
-				MyHorse.this.horseManager.save();
-			}
-		};
-		getServer().getScheduler().runTaskTimerAsynchronously(this, horseManagerSavetask, 20L, 2400L);
-
-		Runnable horseOwnerSavetask = new Runnable()
-		{
-			public void run()
-			{
-				MyHorse.this.ownerManager.save();
-			}
-		};
-		getServer().getScheduler().runTaskTimerAsynchronously(this, horseOwnerSavetask, 1200L, 2400L);
-
-		if (!this.metricsOptOut)
-		{
-			try
-			{
+		if (!this.metricsOptOut) {
+			try {
 				Metrics metrics = new Metrics(this);
-				
+
 				com.dogonfire.myhorse.Metrics.Graph serversGraph = metrics.createGraph("Servers");
 
-				serversGraph.addPlotter(new Metrics.Plotter("Servers")
-				{
+				serversGraph.addPlotter(new Metrics.Plotter("Servers") {
 					@Override
-					public int getValue()
-					{
-						return 1;	
+					public int getValue() {
+						return 1;
 					}
 				});
 
-				serversGraph.addPlotter(new Metrics.Plotter("Using vault")
-				{
+				serversGraph.addPlotter(new Metrics.Plotter("Using vault") {
 					@Override
-					public int getValue()
-					{
-						if(MyHorse.this.economyEnabled)
-						{
+					public int getValue() {
+						if (MyHorse.this.economyEnabled) {
 							return 1;
 						}
-						
-						return 0;	
+
+						return 0;
 					}
 				});
 
-				com.dogonfire.myhorse.Metrics.Graph permissionsUsedGraph = metrics.createGraph("Permission plugins used");
+				com.dogonfire.myhorse.Metrics.Graph permissionsUsedGraph = metrics
+						.createGraph("Permission plugins used");
 
-				permissionsUsedGraph.addPlotter(new Metrics.Plotter("Using PermissionsBukkit")
-				{
-					public int getValue()
-					{
-						if (MyHorse.this.getPermissionsManager().getPermissionPluginName().equals("PermissionsBukkit"))
-						{
+				permissionsUsedGraph.addPlotter(new Metrics.Plotter("Using PermissionsBukkit") {
+					public int getValue() {
+						if (MyHorse.this.getPermissionsManager().getPermissionPluginName()
+								.equals("PermissionsBukkit")) {
 							return 1;
 						}
 						return 0;
 					}
 				});
-				permissionsUsedGraph.addPlotter(new Metrics.Plotter("Using PermissionsEx")
-				{
-					public int getValue()
-					{
-						if (MyHorse.this.getPermissionsManager().getPermissionPluginName().equals("PermissionsEx"))
-						{
+				permissionsUsedGraph.addPlotter(new Metrics.Plotter("Using PermissionsEx") {
+					public int getValue() {
+						if (MyHorse.this.getPermissionsManager().getPermissionPluginName().equals("PermissionsEx")) {
 							return 1;
 						}
 						return 0;
 					}
 				});
-				permissionsUsedGraph.addPlotter(new Metrics.Plotter("Using GroupManager")
-				{
-					public int getValue()
-					{
-						if (MyHorse.this.getPermissionsManager().getPermissionPluginName().equals("GroupManager"))
-						{
+				permissionsUsedGraph.addPlotter(new Metrics.Plotter("Using GroupManager") {
+					public int getValue() {
+						if (MyHorse.this.getPermissionsManager().getPermissionPluginName().equals("GroupManager")) {
 							return 1;
 						}
 						return 0;
 					}
 				});
-				permissionsUsedGraph.addPlotter(new Metrics.Plotter("Using bPermissions")
-				{
-					public int getValue()
-					{
-						if (MyHorse.this.getPermissionsManager().getPermissionPluginName().equals("bPermissions"))
-						{
+				permissionsUsedGraph.addPlotter(new Metrics.Plotter("Using bPermissions") {
+					public int getValue() {
+						if (MyHorse.this.getPermissionsManager().getPermissionPluginName().equals("bPermissions")) {
 							return 1;
 						}
 						return 0;
 					}
 				});
-				
+
 				metrics.start();
-			}
-			catch (Exception ex)
-			{
+			} catch (Exception ex) {
 				log("Failed to submit metrics :-(");
 			}
 		}
+
+		timer = new Runnable() {
+
+			@Override
+			public void run() {
+				boolean babyHorseFound = false;
+				for (UUID horseIdentifier : getHorseManager().getAllHorses()) {
+					if (getHorseManager().isBabyHorse(horseIdentifier)) {
+						if (getHorseManager().getBabyTimeBeforeAdult(horseIdentifier) <= 0) {
+							HorseGrownUpEvent horseGrownUpEvent = new HorseGrownUpEvent(horseIdentifier);
+							if (!horseGrownUpEvent.isCancelled()) {
+								Bukkit.getScheduler().runTask(plugin,
+										() -> Bukkit.getPluginManager().callEvent(horseGrownUpEvent));
+								getHorseManager().setBabyForHorse(horseIdentifier, false);
+							}
+						}
+						babyHorseFound = true;
+					}
+				}
+				if (!babyHorseFound)
+					task.cancel();
+			}
+		};
+		task = Bukkit.getScheduler().runTaskTimerAsynchronously(plugin, timer, 0, 20L * 2L);
+		getHorseManager().updateHorseEntities();
 	}
 
-	public void onDisable()
-	{
-		if(!this.isCombatibleServer())
-		{
-			return;		
+	public void onDisable() {
+		if (!this.isCombatibleServer()) {
+			return;
 		}
-		
+
 		reloadSettings();
 
 		saveSettings();
 
-		this.stableManager.save();
 		this.horseManager.save();
 	}
 
-	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args)
-	{
+	public void checkForNewGroups() {
+		for (String groupName : getPermissionsManager().getGroups()) {
+			if (getConfig().getString("Groups." + groupName) == null) {
+				getConfig().set("Groups." + groupName + ".HorseNameColor", ChatColor.GOLD.name());
+				getConfig().set("Groups." + groupName + ".MaximumHorses", Integer.valueOf(5));
+				saveConfig();
+			}
+		}
+	}
+
+	public void checkForDeletedGroups() {
+		List<String> permissionGroups = Arrays.asList(getPermissionsManager().getGroups());
+		for (String configGroup : getConfig().getConfigurationSection("Groups").getKeys(false)) {
+			if (!permissionGroups.contains(configGroup)) {
+				getConfig().set("Groups." + configGroup, null);
+				saveConfig();
+			}
+		}
+	}
+
+	public void addGroup(String groupName) {
+		getConfig().set("Groups." + groupName + ".HorseNameColor", ChatColor.GOLD.name());
+		getConfig().set("Groups." + groupName + ".MaximumHorses", Integer.valueOf(5));
+		saveConfig();
+	}
+
+	public void deleteGroup(String groupName) {
+		getConfig().set("Groups." + groupName, null);
+		saveConfig();
+	}
+
+	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
 		return this.commands.onCommand(sender, cmd, label, args);
 	}
 
-	public boolean isAllowedInWorld(World world)
-	{
+	public List<String> onTabComplete(CommandSender sender, Command cmd, String label, String[] args) {
+		return commands.onTabComplete(sender, cmd, label, args);
+	}
+
+	public boolean isAllowedInWorld(World world) {
 		return this.allowedWorlds.contains(world.getUID());
 	}
 
-	public boolean isDamageProtection(EntityDamageEvent.DamageCause damage)
-	{
+	public boolean isDamageProtection(EntityDamageEvent.DamageCause damage) {
 		return this.damageProtection.contains(damage);
 	}
 }

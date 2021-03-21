@@ -2,7 +2,6 @@ package com.dogonfire.myhorse;
 
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
-import org.bukkit.plugin.PluginDescriptionFile;
 
 public class UpdateNotifier implements Runnable
 {
