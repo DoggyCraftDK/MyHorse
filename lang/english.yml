@@ -13,21 +13,35 @@ HorsesWasPurged:
 YouPutAChestOnHorse:
 - You put a chest on $Name!
 - $Name now carries a chest!
+HorseHasNoChest:
+- $Name doesn't carry a chest
+ChestHasBeenRemoved:
+- Chest has been removed successfully from $Name!
+ChestHasBeenRemovedFailure:
+- Chest couldn't be removed from $Name!
 NoHorseWithSuchName:
 - You have no horse with the name '$Name'!
 - Who is '$Name'?
+ChestedHorseItemsMoved:
+- Your items has been moved into a new custom inventory! Interact with your while you are sneaking to see your items.
+NotAHorse:
+- That's not a horse, silly!
 NoHorseWithSuchID:
 - You have no horse with the ID '$Name'!
 YouCancelledHorseForSale:
-- $Name&a is no longer for sale!
+- $Name is no longer for sale!
 CouldNotTeleportYourHorse:
 - Cannot teleport your horse to here!
 YouCannotClaimThisHorse:
 - You cannot claim this horse. It belongs to $PlayerName!
 - This horse belongs to $PlayerName. It is not for claiming!
+NotRidingAHorse:
+- You are not riding a horse! You can also access the inventory by interacting with horse while you are sneaking.
+NoPriceOnHorse:
+- $Name is currently not for sale! Use $Amount to sell the horse.
 YouDoNotHaveEnoughMoneyToBuyHorse:
 - You do not have $Amount to buy $Name! 
-- $Name&c costs $Amount, which you do not have! 
+- $Name costs $Amount, which you do not have! 
 - Do you HAVE $Amount? No.
 - How about getting $Amount first? 
 YouMountedOwnedHorse:
@@ -41,22 +55,32 @@ NotHorseFriend:
 - $PlayerName is not on a friend for your horse!
 AlreadyHorseFriend:
 - $PlayerName is already a friend for your horse!
+HasNeverPlayedOnTheServer:
+- $PlayerName has never played on the server!
 YouAddedFriendToHorse:
 - You added $PlayerName as a friend to your horse!
 YouRemovedFriendToHorse:
 - You removed $PlayerName as a friend to your horse!
+BabyTimeBeforeAdult:
+- $Name is going to be an adult in $Amount!
+AlreadyOwnThatHorse:
+- You already own that horse!
 InvalidHorseName:
 - Come on, that is not a valid name for a horse!
 InfoCancelHorseSale:
 - You can cancel your sale by using $Amount with no price!
+YourHorseHasGrownUp:
+- Hurray!! $Name has grown up!
 YouBoughtHorse:
 - You bought $Name from $PlayerName for $Amount!
 PlayerBoughtYourHorse:
 - $Name was bought by $PlayerName for $Amount!
 AreYouSureYouWantToBuyHorse:
 - Are you sure you want to buy $Name for $Amount? Click again to confirm!
+PutChestOnHorseInfo:
+- You can put a chest on any of your horses by interacting with the horse while having a chest in your main hand while your sneaking. 
 DoYouWishToClaim:
-- This horse does not have a owner. Use /myhorse claim to claim it!
+- This horse does not have a owner. Use $Amount to claim it!
 YouClaimedAHorse:
 - You claimed this Horse!
 YouSetHorseForSale:
@@ -99,6 +123,10 @@ HorseUnlocked:
 - You unlocked $Name. Everyone can ride it!
 YouTamedAHorse:
 - You tamed a horse!
+CommandDisabled:
+- $Amount is disabled.
+CannotUseNameTags:
+- Cannot use nametags to change the name. Use $Amount to change the of the horse instead.
 UseCommandToNameYourHorse:
 - Use $Amount to give your horse a name.
 UseCommandToUnlockYourHorse:
@@ -114,7 +142,7 @@ NoHorseSelected:
 SpawnedHorse:
 - You spawned a $Name!
 SetHorseName:
-- You set your horses name to '$Name'!
+- You set your horse's name to '$Name'!
 NoMoreHorsesAllowed:
 - No more horses allowed!
 NoPermissionForCommand:

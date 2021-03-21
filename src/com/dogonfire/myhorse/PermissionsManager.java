@@ -3,9 +3,10 @@ package com.dogonfire.myhorse;
 import net.milkbowl.vault.chat.Chat;
 import net.milkbowl.vault.permission.Permission;
 
+import org.bukkit.Bukkit;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
-import org.bukkit.plugin.RegisteredServiceProvider;
 
 public class PermissionsManager
 {
@@ -15,17 +16,14 @@ public class PermissionsManager
 	private Permission	vaultPermission	= null;
 	private Chat		vaultChat		= null;
 
-	public PermissionsManager(MyHorse p)
+	public PermissionsManager(MyHorse plugin)
 	{
-		this.plugin = p;
+		this.plugin = plugin;
 
-		if (p.vaultEnabled)
+		if (plugin.vaultEnabled)
 		{
-			RegisteredServiceProvider<Permission> permissionProvider = plugin.getServer().getServicesManager().getRegistration(Permission.class);
-			vaultPermission = permissionProvider.getProvider();
-
-			RegisteredServiceProvider<Chat> chatProvider = plugin.getServer().getServicesManager().getRegistration(Chat.class);
-			vaultChat = chatProvider.getProvider();
+			vaultPermission = plugin.getPermissions();
+			vaultChat = plugin.getChat();
 		}
 	}
 
@@ -60,9 +58,9 @@ public class PermissionsManager
 	{
 		if (this.plugin.vaultEnabled)
 		{
-			for (String str : vaultPermission.getGroups())
+			for (String group : vaultPermission.getGroups())
 			{
-				if (str.contains(groupName))
+				if (group.contains(groupName))
 					return true;
 			}
 		}
@@ -81,8 +79,14 @@ public class PermissionsManager
 	public String getGroup(String playerName)
 	{
 		if (this.plugin.vaultEnabled)
-		{
-			return vaultPermission.getPrimaryGroup(plugin.getServer().getPlayer(playerName));
+		{			
+			for (OfflinePlayer offlinePlayer : Bukkit.getOfflinePlayers()) 
+			{
+				if(offlinePlayer.getName().equals(playerName)) 
+				{
+					return vaultPermission.getPrimaryGroup(null, offlinePlayer);
+				}
+			}
 		}
 		return "";
 	}
